@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "t9-ipc": {
+      "command": "python3",
+      "args": ["/path/to/t9-ipc/mcp/server.py"]
+    }
+  }
+}

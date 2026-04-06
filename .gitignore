@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.db
+*.db-wal
+*.db-shm
+data/ipc/inbox/*.md
+data/ipc/archive/*.md
+data/ipc/heartbeats.json
+.env
+*.lock
+TASK.md
+.t9_ipc.db.bootlock
