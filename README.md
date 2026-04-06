@@ -118,7 +118,7 @@ Linux, macOS, and WSL. Not native Windows — the locking uses `fcntl`, which is
 
 ## Credits
 
-Respect to [@dv-hua](https://github.com/dv-hua) and [TAP](https://github.com/HUA-Labs/tap).
+Respect to [@devindown](https://github.com/devindown) and [TAP](https://github.com/HUA-Labs/tap).
 
 ## License
 
