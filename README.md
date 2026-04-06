@@ -73,17 +73,11 @@ You never call these yourself — Claude does, when you ask things like "tell th
 
 ## Is this for me?
 
-**Yes, if:**
 - You run 2+ Claude Code sessions at once and want them to coordinate
-- You only use Claude Code (not mixing with Codex or Gemini)
 - You want something tiny you can read in 20 minutes and trust
+- You don't want to install a runtime, a package manager, or a server
 
-**No — use [TAP](https://github.com/HUA-Labs/tap) instead, if:**
-- You're mixing Claude + Codex + Gemini in the same project
-- You need enterprise features (test suite, rate limiting, auth, multi-device)
-- You're comfortable with the Node/npm ecosystem
-
-t9-ipc is deliberately the small, sharp, Claude-Code-only option. If you outgrow it, TAP is the next step up.
+Deliberately small and sharp. Four files, one MCP server, no configuration required.
 
 ## How it works (if you're curious)
 
@@ -124,7 +118,7 @@ Linux, macOS, and WSL. Not native Windows — the locking uses `fcntl`, which is
 
 ## Credits
 
-Inspired by [TAP](https://github.com/HUA-Labs/tap) by [@dv-hua](https://github.com/dv-hua), which pioneered the file-as-truth approach to multi-agent communication. t9-ipc borrows that core idea and shrinks it down for the Claude-Code-only case.
+Respect to [@dv-hua](https://github.com/dv-hua) and [TAP](https://github.com/HUA-Labs/tap).
 
 ## License
 

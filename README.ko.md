@@ -71,17 +71,11 @@ Claude가 `t9_ipc_who` 호출하고 다른 세션을 보여준다. 그 다음:
 
 ## 나한테 맞는 물건인가
 
-**맞음:**
 - Claude Code 세션 2개 이상 굴려본 적 있고, 서로 이야기 시켰으면 좋겠다
-- Claude Code만 쓴다 (Codex/Gemini 섞지 않음)
 - 20분 안에 코드 전부 읽고 신뢰할 수 있는 작은 도구를 원한다
+- 런타임/패키지 매니저/서버 같은 거 설치하고 싶지 않다
 
-**안 맞음 — [TAP](https://github.com/HUA-Labs/tap) 쓰세요:**
-- Claude + Codex + Gemini 같이 쓴다
-- 프로덕션 수준 기능 필요 (테스트, rate limit, 인증, 멀티 디바이스)
-- Node/npm 생태계가 익숙하다
-
-t9-ipc는 일부러 작고 뾰족한 Claude-Code-only 옵션. 졸업하면 TAP이 다음 단계.
+일부러 작고 뾰족하게. 파일 몇 개, MCP 서버 하나, 설정 없음.
 
 ## 작동 방식 (궁금하면)
 
@@ -122,7 +116,7 @@ Linux, macOS, WSL. 네이티브 Windows는 안 됨 — 파일 잠금에 `fcntl` 
 
 ## Credits
 
-[TAP](https://github.com/HUA-Labs/tap) ([@dv-hua](https://github.com/dv-hua)) 에서 영감 받음. TAP이 먼저 만든 "파일 = 진실(file as truth)" 접근을 Claude Code 전용 상황에 맞춰 축소한 것.
+[@dv-hua](https://github.com/dv-hua) 와 [TAP](https://github.com/HUA-Labs/tap) 에 respect.
 
 ## 라이선스
 
