@@ -1,36 +1,37 @@
 # t9-ipc
 
-**Inter-session communication for Claude Code.**
+[한국어 README](README.ko.md)
 
-When you run multiple Claude Code sessions simultaneously, they can't talk to each other. t9-ipc fixes that — sessions discover each other via heartbeats, exchange messages through files, and get real-time notifications via Claude's MCP Channels protocol.
+**Two or more Claude Code sessions. Talking to each other. In 5 minutes.**
 
-## How It Works
+Running multiple Claude Code sessions at once? They can't see each other by default. This gives them a tiny shared mailbox so they can.
 
 ```
 Session A                    Session B
-    │                            │
-    ├─ heartbeat_update() ──────►│◄── heartbeat_update()
-    │                            │
-    ├─ msg_send("hello") ──►  inbox/*.md  ◄── fs.watch (2s poll)
-    │                            │
-    │                     Channel notification
-    │                            │
-    │                   "Session A says hello"
+  "hey B, I'm done"  ────►  "A is done, my turn"
 ```
 
-**Core principle: File = truth, DB = cache.**
+## What it does
 
-Messages are stored as markdown files in `data/ipc/inbox/`. The SQLite database is a queryable cache. If the DB disappears, the files remain. The MCP server watches the inbox directory and pushes real-time notifications to Claude via the Channels protocol.
+- **Discovery** — who else is running right now?
+- **Direct messages** — one session to another
+- **Broadcast** — shout to everyone
+- **Real-time delivery** — messages pop into the other session's conversation automatically (via Claude's MCP Channels)
 
-## Quick Start
+That's it. No accounts, no servers, no npm install. Python standard library only.
+
+## 5-minute setup
 
 ### 1. Clone
 
 ```bash
 git clone https://github.com/HanbeenMoon/t9-ipc.git
+cd t9-ipc
 ```
 
-### 2. Add to your `.mcp.json`
+### 2. Point Claude Code at it
+
+Open (or create) `~/.claude.json` and add:
 
 ```json
 {
@@ -38,85 +39,92 @@ git clone https://github.com/HanbeenMoon/t9-ipc.git
     "t9-ipc": {
       "command": "python3",
       "args": ["mcp/server.py"],
-      "cwd": "/path/to/t9-ipc"
+      "cwd": "/absolute/path/to/t9-ipc"
     }
   }
 }
 ```
 
-### 3. Use in Claude Code
+Replace `/absolute/path/to/t9-ipc` with wherever you cloned it.
 
-Once configured, your Claude sessions can:
+### 3. Restart Claude Code
 
-- **Discover peers**: `t9_ipc_who` — lists active sessions via heartbeat
-- **Send messages**: `t9_ipc_send` — direct message or broadcast
-- **Broadcast**: `t9_ipc_broadcast` — notify all sessions
-- **Check inbox**: `t9_ipc_unread` — fallback for non-Channels clients
+You're done. Open two sessions and ask one of them:
 
-Messages from other sessions appear automatically as `<channel source="t9-ipc">` tags in your conversation.
+> who else is online?
 
-## Architecture
+It will call `t9_ipc_who` and list the other session. Then:
 
+> send "hello" to \<the other session id\>
+
+Messages from other sessions show up automatically in your conversation — tagged with `<channel source="t9-ipc">`.
+
+## The tools Claude gets
+
+| Tool | What it does |
+|------|--------------|
+| `t9_ipc_who` | List currently active sessions |
+| `t9_ipc_send` | Send a message to a specific session |
+| `t9_ipc_broadcast` | Send to everyone |
+| `t9_ipc_unread` | List unread messages (fallback, for clients without Channels) |
+| `t9_ipc_set_name` | Give this session a readable name |
+
+You never call these yourself — Claude does, when you ask things like "tell the other session to wait" or "who else is running?".
+
+## Is this for me?
+
+**Yes, if:**
+- You run 2+ Claude Code sessions at once and want them to coordinate
+- You only use Claude Code (not mixing with Codex or Gemini)
+- You want something tiny you can read in 20 minutes and trust
+
+**No — use [TAP](https://github.com/HUA-Labs/tap) instead, if:**
+- You're mixing Claude + Codex + Gemini in the same project
+- You need enterprise features (test suite, rate limiting, auth, multi-device)
+- You're comfortable with the Node/npm ecosystem
+
+t9-ipc is deliberately the small, sharp, Claude-Code-only option. If you outgrow it, TAP is the next step up.
+
+## How it works (if you're curious)
+
+Three moving parts, that's it:
+
+1. **`data/ipc/heartbeats.json`** — every live session pings this file every tool call. Dead sessions get cleaned automatically.
+2. **`data/ipc/inbox/*.md`** — each message is a markdown file with a little YAML header. The files *are* the mailbox. No database required for the protocol.
+3. **`mcp/server.py`** — a tiny MCP server that watches the inbox and pushes new files to Claude as they arrive.
+
+Messages look like this:
+
+```markdown
+---
+from: session_alpha
+to: session_beta
+subject: status update
+created: 2026-04-06 15:30:00
+---
+
+done with the parser, pushing to main
 ```
-t9-ipc/
-├── lib/
-│   ├── config.py       # Paths and optional integrations
-│   ├── ipc.py          # Core: sessions, messages, locks, heartbeats
-│   └── notify.py       # Optional: Telegram notifications
-├── mcp/
-│   └── server.py       # MCP server with Channels support
-├── data/
-│   └── ipc/
-│       ├── inbox/      # Message files (truth)
-│       └── archive/    # Processed messages
-└── examples/
-    └── mcp.json        # Example MCP configuration
-```
 
-### Session Discovery
+You can read them with your eyes. You can `grep` them. If the server crashes, your messages are still there.
 
-Sessions announce themselves by writing to `heartbeats.json`. Each entry includes PID, timestamp, and current work. Stale sessions (PID dead or 24h timeout) are automatically cleaned.
+## Configuration (optional)
 
-### File Locking
+All optional. Defaults work out of the box.
 
-Prevents concurrent edits to the same file across sessions:
-
-```python
-from lib.ipc import lock_acquire, lock_release
-
-if lock_acquire(session_id, "path/to/file.py"):
-    # safe to edit
-    lock_release(session_id, "path/to/file.py")
-```
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `IPC_SESSION_ID` | No | Override auto-detected session ID |
-| `IPC_TG_TOKEN` | No | Telegram Bot token (for escalation alerts) |
-| `IPC_TG_CHAT` | No | Telegram chat ID (for escalation alerts) |
-| `IPC_DB_PATH` | No | Custom SQLite database path |
-| `IPC_SESSION_FILE` | No | Custom session file path (default: `~/.t9_ipc_session`) |
-### Database
-
-SQLite database is created at `t9-ipc/.t9_ipc.db` by default. Override with `IPC_DB_PATH`. WAL mode is enabled for concurrent access.
-
-## Dependencies
-
-**None.** Pure Python 3.10+ stdlib. No pip install required.
+| Environment variable | What it does |
+|----------------------|--------------|
+| `IPC_SESSION_ID` | Override the auto-generated session name |
+| `IPC_DB_PATH` | Move the SQLite cache somewhere else |
+| `IPC_TG_TOKEN` + `IPC_TG_CHAT` | Forward `escalation`-type messages to a Telegram bot |
 
 ## Platform support
 
-Linux, macOS, and WSL. Native Windows is not supported — the
-heartbeat file locking uses `fcntl.flock`, which is Unix-only.
+Linux, macOS, and WSL. Not native Windows — the locking uses `fcntl`, which is Unix-only.
 
 ## Credits
 
-Inspired by [TAP](https://github.com/HUA-Labs/tap) by @dv-hua, which
-pioneered the file-as-truth approach to inter-agent communication.
+Inspired by [TAP](https://github.com/HUA-Labs/tap) by [@dv-hua](https://github.com/dv-hua), which pioneered the file-as-truth approach to multi-agent communication. t9-ipc borrows that core idea and shrinks it down for the Claude-Code-only case.
 
 ## License
 
